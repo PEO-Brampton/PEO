@@ -1,0 +1,32 @@
+{
+  "name": "peo-bridge-building-competition",
+  "version": "1.0.0",
+  "description": "Bridge Building Competition Management System",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "firebase": "^10.7.0",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "css-loader": "^6.8.1",
+    "gh-pages": "^6.1.1",
+    "html-webpack-plugin": "^5.6.0",
+    "mini-css-extract-plugin": "^2.9.2",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
