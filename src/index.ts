@@ -1,10 +1,10 @@
 import './styles.css';
 import { db } from './firebase';
-import { collection, getDocs, updateDoc, doc, addDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Participant, JudgingCriteria } from './types';
 
 // Constants
-const BASE_URL = '/PEO';
+const BASE_URL = '/BBC';
 
 // DOM Elements
 const navLinks = document.querySelectorAll('.nav-links a');
@@ -18,6 +18,9 @@ const seniorLeaderboardBody = document.getElementById('senior-leaderboard-body')
 const csvInput = document.getElementById('csv-input') as HTMLTextAreaElement;
 const importCsvButton = document.getElementById('import-csv') as HTMLButtonElement;
 const generateTestDataButton = document.getElementById('generate-test-data') as HTMLButtonElement;
+const checkInForm = document.getElementById('check-in-form') as HTMLFormElement;
+const judgingForm = document.getElementById('judging-form') as HTMLFormElement;
+const mostAdventurousCheckbox = document.getElementById('most-adventurous') as HTMLInputElement;
 
 // State
 let participants: Participant[] = [];
@@ -390,6 +393,36 @@ generateTestDataButton?.addEventListener('click', async () => {
     } catch (error) {
         console.error('Error generating test data:', error);
         alert('Error generating test data.');
+    }
+});
+
+// Handle judging form submission
+judgingForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const teamNumber = (document.getElementById('judge-team-number') as HTMLInputElement).value;
+    const bridgeWeight = parseFloat((document.getElementById('bridge-weight') as HTMLInputElement).value);
+    const bridgeWeightSupported = parseFloat((document.getElementById('bridge-weight-supported') as HTMLInputElement).value);
+    const judgeComments = (document.getElementById('judge-comments') as HTMLTextAreaElement).value;
+    const mostAdventurous = mostAdventurousCheckbox.checked;
+
+    try {
+        const participantRef = doc(db, 'participants', teamNumber);
+        await updateDoc(participantRef, {
+            bridgeWeight,
+            bridgeWeightSupported,
+            judgeComments,
+            mostAdventurous,
+            judged: true,
+            judgedAt: serverTimestamp()
+        });
+
+        alert('Score submitted successfully!');
+        judgingForm.reset();
+        mostAdventurousCheckbox.checked = false;
+    } catch (error) {
+        console.error('Error submitting score:', error);
+        alert('Error submitting score. Please try again.');
     }
 });
 

@@ -140,6 +140,18 @@
                         <label>Comments</label>
                         <textarea id="judge-comments" rows="4"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="bridge-weight">Bridge Weight (g):</label>
+                        <input type="number" id="bridge-weight" min="0" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bridge-weight-supported">Weight Supported (kg):</label>
+                        <input type="number" id="bridge-weight-supported" min="0" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bridge-weight-supported">Most Adventurous?</label>
+                        <input type="checkbox" id="most-adventurous">
+                    </div>
                     <button id="submit-judging" class="submit-button">Submit Score</button>
                 </div>
             </div>
