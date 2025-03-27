@@ -8,17 +8,22 @@ export interface Participant {
     schoolName: string;
     category: 'Junior' | 'Senior';
     arrivalTime: string;
+    status: 'registered' | 'checked in' | 'waiting' | 'judged';
     checkedIn: boolean;
     checkedInAt?: Date;
     judged: boolean;
     judgedAt?: Date;
-    bridgeWeight?: number;
-    bridgeWeightSupported?: number;
-    judgeComments?: string;
-    mostAdventurous?: boolean;
-    status: 'registered' | 'checked in' | 'waiting' | 'judged';
+    waiver?: boolean;
     score?: number;
     comments?: string;
+    bridgeWeight?: number;
+    bridgeWeightSupported?: number;
+    criteria1?: number;
+    criteria2?: number;
+    criteria3?: number;
+    criteria4?: number;
+    criteria5?: number;
+    mostAdventurous?: boolean;
 }
 
 export interface JudgingCriteria {

@@ -20,16 +20,36 @@ const importCsvButton = document.getElementById('import-csv') as HTMLButtonEleme
 const generateTestDataButton = document.getElementById('generate-test-data') as HTMLButtonElement;
 const checkInForm = document.getElementById('check-in-form') as HTMLFormElement;
 const judgingForm = document.getElementById('judging-form') as HTMLFormElement;
-const mostAdventurousCheckbox = document.getElementById('most-adventurous') as HTMLInputElement;
+const sidebarToggle = document.getElementById('sidebar-toggle') as HTMLButtonElement;
+const sidebar = document.querySelector('.sidebar') as HTMLElement;
+const waiverModal = document.getElementById('waiver-modal') as HTMLDivElement;
+const waiverConfirmBtn = document.getElementById('waiver-confirm') as HTMLButtonElement;
+const waiverCancelBtn = document.getElementById('waiver-cancel') as HTMLButtonElement;
 
 // State
 let participants: Participant[] = [];
+let isSidebarCollapsed = false;
+let currentSort = {
+    field: 'teamNumber' as keyof Participant,
+    direction: 'asc' as 'asc' | 'desc'
+};
+let sortedParticipantsCache: Participant[] | null = null;
+let filteredParticipantsCache: {
+    junior: Participant[];
+    senior: Participant[];
+} | null = null;
+
+// Clear cache when participants change
+function clearSortCache() {
+    sortedParticipantsCache = null;
+}
 
 // Make event handlers globally available
 declare global {
     interface Window {
         handleCheckIn: (participantId: string) => void;
         handleWaiting: (participantId: string) => void;
+        handleReset: (participantId: string) => void;
     }
 }
 
@@ -71,6 +91,18 @@ window.addEventListener('popstate', () => {
     navigateToPage(path);
 });
 
+// Sidebar toggle functionality
+sidebarToggle?.addEventListener('click', () => {
+    isSidebarCollapsed = !isSidebarCollapsed;
+    sidebar?.classList.toggle('collapsed');
+    
+    // Update toggle icon
+    const toggleIcon = sidebarToggle.querySelector('.toggle-icon');
+    if (toggleIcon) {
+        toggleIcon.textContent = isSidebarCollapsed ? '☰' : '×';
+    }
+});
+
 // Firebase Functions
 async function fetchParticipants() {
     try {
@@ -84,6 +116,11 @@ async function fetchParticipants() {
         })) as Participant[];
         
         console.log('Participants loaded:', participants.length);
+        
+        // Clear all caches
+        clearSortCache();
+        filteredParticipantsCache = null;
+        
         renderParticipants();
         updateTeamSelect();
         updateLeaderboards();
@@ -160,11 +197,14 @@ async function importParticipants(csvData: string) {
             teamName: values[1],
             firstName: values[2],
             lastName: values[3],
-            grade: parseInt(values[4]),
+            grade: values[4].toString(),
             schoolName: values[5],
             category: values[6] as 'Junior' | 'Senior',
             arrivalTime: values[7],
-            status: 'registered'
+            waiver: values[8]?.toLowerCase() === 'yes',
+            status: 'registered',
+            checkedIn: false,
+            judged: false
         };
         
         await addDoc(collection(db, 'participants'), participant);
@@ -180,8 +220,8 @@ async function generateRandomParticipants() {
     
     for (let i = 0; i < 50; i++) {
         const teamNumber = String(i + 1).padStart(4, '0');
-        const grade = Math.floor(Math.random() * 4) + 5; // Grades 5-8
-        const category = grade <= 6 ? 'Junior' : 'Senior';
+        const grade = (Math.floor(Math.random() * 4) + 5).toString(); // Grades 5-8
+        const category = parseInt(grade) <= 6 ? 'Junior' : 'Senior';
         const hour = Math.floor(Math.random() * 4) + 8; // 8 AM to 12 PM
         const minute = Math.floor(Math.random() * 60);
         const arrivalTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -195,7 +235,10 @@ async function generateRandomParticipants() {
             schoolName: schools[Math.floor(Math.random() * schools.length)],
             category,
             arrivalTime,
-            status: 'registered'
+            waiver: Math.random() > 0.5, // Randomly set waiver status
+            status: 'registered',
+            checkedIn: false,
+            judged: false
         };
         
         await addDoc(collection(db, 'participants'), participant);
@@ -204,12 +247,90 @@ async function generateRandomParticipants() {
     await fetchParticipants();
 }
 
+// Sorting Functions
+function sortParticipants(participants: Participant[], field: keyof Participant, direction: 'asc' | 'desc'): Participant[] {
+    return [...participants].sort((a, b) => {
+        let aValue = a[field];
+        let bValue = b[field];
+
+        // Handle special cases
+        if (field === 'mostAdventurous') {
+            aValue = aValue ? 1 : 0;
+            bValue = bValue ? 1 : 0;
+        }
+
+        // Handle null/undefined values
+        if (aValue === undefined || aValue === null) aValue = '';
+        if (bValue === undefined || bValue === null) bValue = '';
+
+        // Compare values
+        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+function updateSortIndicators() {
+    // Remove all sort indicators
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.classList.remove('asc', 'desc', 'active');
+    });
+
+    // Add sort indicator to current sort column
+    const currentTh = document.querySelector(`.sortable[data-sort="${currentSort.field}"]`);
+    if (currentTh) {
+        currentTh.classList.add(currentSort.direction, 'active');
+    }
+}
+
+function handleSort(field: keyof Participant) {
+    if (currentSort.field === field) {
+        // Toggle direction if clicking the same column
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        // Set new field and default to ascending
+        currentSort.field = field;
+        currentSort.direction = 'asc';
+    }
+
+    updateSortIndicators();
+    renderParticipants(sortParticipants(participants, currentSort.field, currentSort.direction));
+    updateLeaderboards();
+}
+
+// Add click handlers to sortable headers
+document.querySelectorAll('.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+        const field = th.getAttribute('data-sort') as keyof Participant;
+        if (field) {
+            handleSort(field);
+        }
+    });
+});
+
+// Debounce function
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+    let timeout: NodeJS.Timeout;
+    return function executedFunction(...args: Parameters<T>) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // UI Functions
 function renderParticipants(filteredParticipants: Participant[] = participants) {
     if (!participantsBody) return;
     
-    participantsBody.innerHTML = filteredParticipants.map(participant => `
-        <tr>
+    const sortedParticipants = sortParticipants(filteredParticipants, currentSort.field, currentSort.direction);
+    const fragment = document.createDocumentFragment();
+    
+    sortedParticipants.forEach(participant => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
             <td>${participant.teamNumber}</td>
             <td>${participant.teamName}</td>
             <td>${participant.firstName}</td>
@@ -218,8 +339,14 @@ function renderParticipants(filteredParticipants: Participant[] = participants) 
             <td>${participant.schoolName}</td>
             <td>${participant.category}</td>
             <td>${participant.arrivalTime}</td>
+            <td>${participant.waiver ? 'Yes' : 'No'}</td>
             <td>${participant.status}</td>
             <td>
+                ${participant.status === 'checked in' ? `
+                    <button class="action-button reset-btn" data-participant-id="${participant.id}">
+                        Reset
+                    </button>
+                ` : ''}
                 ${(participant.status === 'registered' || participant.status === 'waiting') ? `
                     <button class="action-button check-in-btn" data-participant-id="${participant.id}">
                         Check In
@@ -231,8 +358,12 @@ function renderParticipants(filteredParticipants: Participant[] = participants) 
                     </button>
                 ` : ''}
             </td>
-        </tr>
-    `).join('');
+        `;
+        fragment.appendChild(row);
+    });
+
+    participantsBody.innerHTML = '';
+    participantsBody.appendChild(fragment);
 
     // Add event listeners to the buttons
     participantsBody.querySelectorAll('.check-in-btn').forEach(button => {
@@ -252,7 +383,33 @@ function renderParticipants(filteredParticipants: Participant[] = participants) 
             }
         });
     });
+    
+    // Add event listeners for reset buttons
+    participantsBody.querySelectorAll('.reset-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const participantId = button.getAttribute('data-participant-id');
+            if (participantId) {
+                window.handleReset(participantId);
+            }
+        });
+    });
 }
+
+// Optimized search with debouncing
+const debouncedSearch = debounce((searchTerm: string) => {
+    const filteredParticipants = participants.filter(participant => 
+        participant.teamNumber.toLowerCase().includes(searchTerm) ||
+        participant.teamName.toLowerCase().includes(searchTerm) ||
+        participant.firstName.toLowerCase().includes(searchTerm)
+    );
+    renderParticipants(filteredParticipants);
+}, 300);
+
+// Update search event listener
+searchInput?.addEventListener('input', (e) => {
+    const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+    debouncedSearch(searchTerm);
+});
 
 function updateTeamSelect() {
     if (!teamSelect) return;
@@ -270,108 +427,124 @@ function updateLeaderboards() {
     if (!juniorLeaderboardBody || !seniorLeaderboardBody) return;
     
     const judgedParticipants = participants.filter(p => p.status === 'judged');
+    const sortedParticipants = sortParticipants(judgedParticipants, currentSort.field, currentSort.direction);
     
-    // Sort participants by score in descending order
-    const sortedParticipants = [...judgedParticipants].sort((a, b) => {
-        const scoreA = a.score || 0;
-        const scoreB = b.score || 0;
-        return scoreB - scoreA; // Descending order
+    // Update cache if needed
+    if (!filteredParticipantsCache) {
+        filteredParticipantsCache = {
+            junior: sortedParticipants.filter(p => p.category === 'Junior'),
+            senior: sortedParticipants.filter(p => p.category === 'Senior')
+        };
+    }
+    
+    // Render junior teams
+    const juniorFragment = document.createDocumentFragment();
+    filteredParticipantsCache.junior.forEach(team => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${team.teamNumber}</td>
+            <td>${team.teamName}</td>
+            <td>${team.category}</td>
+            <td>${team.status}</td>
+            <td>${team.score}</td>
+            <td>${team.mostAdventurous ? '⭐' : ''}</td>
+        `;
+        juniorFragment.appendChild(row);
     });
+    juniorLeaderboardBody.innerHTML = '';
+    juniorLeaderboardBody.appendChild(juniorFragment);
     
-    const juniorTeams = sortedParticipants.filter(p => p.category === 'Junior');
-    const seniorTeams = sortedParticipants.filter(p => p.category === 'Senior');
-    
-    juniorLeaderboardBody.innerHTML = juniorTeams.map(team => `
-        <tr>
+    // Render senior teams
+    const seniorFragment = document.createDocumentFragment();
+    filteredParticipantsCache.senior.forEach(team => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
             <td>${team.teamNumber}</td>
             <td>${team.teamName}</td>
             <td>${team.category}</td>
             <td>${team.status}</td>
             <td>${team.score}</td>
-        </tr>
-    `).join('');
-    
-    seniorLeaderboardBody.innerHTML = seniorTeams.map(team => `
-        <tr>
-            <td>${team.teamNumber}</td>
-            <td>${team.teamName}</td>
-            <td>${team.category}</td>
-            <td>${team.status}</td>
-            <td>${team.score}</td>
-        </tr>
-    `).join('');
+            <td>${team.mostAdventurous ? '⭐' : ''}</td>
+        `;
+        seniorFragment.appendChild(row);
+    });
+    seniorLeaderboardBody.innerHTML = '';
+    seniorLeaderboardBody.appendChild(seniorFragment);
 }
 
 // Event Handlers
+let pendingCheckInId: string | null = null;
+
 window.handleCheckIn = function(participantId: string) {
-    updateParticipantStatus(participantId, 'checked in');
+    const participant = participants.find(p => p.id === participantId);
+    
+    if (participant && participant.waiver === false) {
+        // Show custom modal for waiver confirmation
+        pendingCheckInId = participantId;
+        waiverModal.classList.add('active');
+    } else {
+        // Normal check-in if waiver is already signed
+        updateParticipantStatus(participantId, 'checked in');
+    }
 };
 
 window.handleWaiting = function(participantId: string) {
     updateParticipantStatus(participantId, 'waiting');
 };
 
-// Search functionality
-searchInput?.addEventListener('input', (e) => {
-    const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
-    const filteredParticipants = participants.filter(participant => 
-        participant.teamNumber.toLowerCase().includes(searchTerm) ||
-        participant.teamName.toLowerCase().includes(searchTerm) ||
-        participant.firstName.toLowerCase().includes(searchTerm)
-    );
-    renderParticipants(filteredParticipants);
-});
+window.handleReset = function(participantId: string) {
+    updateParticipantStatus(participantId, 'registered');
+};
 
-// Judging form submission
-submitButton?.addEventListener('click', async () => {
-    try {
-        const selectedTeamId = teamSelect?.value;
-        if (!selectedTeamId) {
-            alert('Please select a team to judge.');
-            return;
-        }
-        
-        // Get all criteria scores
-        const criteriaScores = document.querySelectorAll('.criteria-score');
-        if (criteriaScores.length !== 5) {
-            alert('Error: Missing criteria scores. Please check the form.');
-            return;
-        }
-
-        const criteria: JudgingCriteria = {
-            criteria1: Number((criteriaScores[0] as HTMLSelectElement)?.value || 0),
-            criteria2: Number((criteriaScores[1] as HTMLSelectElement)?.value || 0),
-            criteria3: Number((criteriaScores[2] as HTMLSelectElement)?.value || 0),
-            criteria4: Number((criteriaScores[3] as HTMLSelectElement)?.value || 0),
-            criteria5: Number((criteriaScores[4] as HTMLSelectElement)?.value || 0)
-        };
-
-        // Validate criteria scores
-        if (Object.values(criteria).some(score => isNaN(score) || score < 0 || score > 10)) {
-            alert('Please enter valid scores between 0 and 10 for all criteria.');
-            return;
-        }
-        
-        const commentsElement = document.getElementById('judge-comments') as HTMLTextAreaElement;
-        const comments = commentsElement?.value || '';
-        
-        await submitJudging(selectedTeamId, criteria, comments);
-        
-        // Reset form
-        if (teamSelect) teamSelect.value = '';
-        criteriaScores.forEach(select => {
-            if (select instanceof HTMLSelectElement) {
-                select.value = '';
-            }
-        });
-        if (commentsElement) commentsElement.value = '';
-        
-        alert('Judging submitted successfully!');
-    } catch (error) {
-        console.error('Error submitting judging:', error);
-        alert('Error submitting judging. Please try again.');
+// Waiver modal event listeners
+waiverConfirmBtn?.addEventListener('click', () => {
+    if (pendingCheckInId) {
+        // Update both waiver status and check in status
+        updateParticipantWithWaiver(pendingCheckInId, true, 'checked in');
+        pendingCheckInId = null;
     }
+    waiverModal.classList.remove('active');
 });
+
+waiverCancelBtn?.addEventListener('click', () => {
+    pendingCheckInId = null;
+    waiverModal.classList.remove('active');
+});
+
+// New function to update both waiver and status
+async function updateParticipantWithWaiver(participantId: string, waiver: boolean, status: 'registered' | 'checked in' | 'waiting' | 'judged') {
+    try {
+        const participantRef = doc(db, 'participants', participantId);
+        
+        // Set checkedIn based on status
+        const checkedIn = status === 'checked in' || status === 'waiting' || status === 'judged';
+        
+        // Set arrival time if checking in
+        const updateData: any = { 
+            status,
+            checkedIn,
+            waiver
+        };
+        
+        // If changing to checked in, set arrival time
+        if (status === 'checked in') {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            updateData.arrivalTime = `${hours}:${minutes}`;
+        }
+        
+        await updateDoc(participantRef, updateData);
+        
+        // Refresh participants
+        await fetchParticipants();
+        
+        console.log(`Participant ${participantId} waiver and status updated to ${waiver ? 'Yes' : 'No'} and ${status}`);
+    } catch (error) {
+        console.error(`Error updating participant: ${error}`);
+        alert(`Error updating participant: ${error}`);
+    }
+}
 
 // Admin functionality
 importCsvButton?.addEventListener('click', async () => {
@@ -396,30 +569,91 @@ generateTestDataButton?.addEventListener('click', async () => {
     }
 });
 
-// Handle judging form submission
+// Form validation helper
+function validateForm(formData: FormData): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    // Validate required fields
+    const requiredFields = ['team-select', 'bridge-weight', 'bridge-weight-supported'];
+    requiredFields.forEach(field => {
+        if (!formData.get(field)) {
+            errors.push(`${field.replace('-', ' ')} is required`);
+        }
+    });
+    
+    // Validate numeric fields
+    const numericFields = ['bridge-weight', 'bridge-weight-supported'];
+    numericFields.forEach(field => {
+        const value = formData.get(field);
+        if (value && isNaN(Number(value))) {
+            errors.push(`${field.replace('-', ' ')} must be a number`);
+        }
+    });
+    
+    // Validate criteria scores
+    const criteriaScores = document.querySelectorAll('.criteria-score');
+    criteriaScores.forEach((select, index) => {
+        const value = (select as HTMLSelectElement).value;
+        if (!value || isNaN(Number(value)) || Number(value) < 0 || Number(value) > 10) {
+            errors.push(`Criteria ${index + 1} must be a number between 0 and 10`);
+        }
+    });
+    
+    return {
+        isValid: errors.length === 0,
+        errors
+    };
+}
+
+// Optimized form submission handler
 judgingForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const teamNumber = (document.getElementById('judge-team-number') as HTMLInputElement).value;
-    const bridgeWeight = parseFloat((document.getElementById('bridge-weight') as HTMLInputElement).value);
-    const bridgeWeightSupported = parseFloat((document.getElementById('bridge-weight-supported') as HTMLInputElement).value);
-    const judgeComments = (document.getElementById('judge-comments') as HTMLTextAreaElement).value;
-    const mostAdventurous = mostAdventurousCheckbox.checked;
-
     try {
-        const participantRef = doc(db, 'participants', teamNumber);
+        const formData = new FormData(judgingForm);
+        const validation = validateForm(formData);
+        
+        if (!validation.isValid) {
+            alert(validation.errors.join('\n'));
+            return;
+        }
+
+        const selectedTeamId = formData.get('team-select') as string;
+        const bridgeWeight = Number(formData.get('bridge-weight'));
+        const bridgeWeightSupported = Number(formData.get('bridge-weight-supported'));
+        const mostAdventurous = formData.get('most-adventurous') === 'on';
+
+        // Get criteria scores
+        const criteria: JudgingCriteria = {
+            criteria1: Number((document.getElementById('criteria1') as HTMLSelectElement)?.value || 0),
+            criteria2: Number((document.getElementById('criteria2') as HTMLSelectElement)?.value || 0),
+            criteria3: Number((document.getElementById('criteria3') as HTMLSelectElement)?.value || 0),
+            criteria4: Number((document.getElementById('criteria4') as HTMLSelectElement)?.value || 0),
+            criteria5: Number((document.getElementById('criteria5') as HTMLSelectElement)?.value || 0)
+        };
+
+        const judgeComments = formData.get('judge-comments') as string;
+        const totalScore = Object.values(criteria).reduce((sum, score) => sum + score, 0);
+
+        const participantRef = doc(db, 'participants', selectedTeamId);
         await updateDoc(participantRef, {
+            status: 'judged',
+            score: totalScore,
+            comments: judgeComments,
             bridgeWeight,
             bridgeWeightSupported,
-            judgeComments,
             mostAdventurous,
-            judged: true,
-            judgedAt: serverTimestamp()
+            ...criteria
         });
 
-        alert('Score submitted successfully!');
+        // Reset form and clear caches
         judgingForm.reset();
-        mostAdventurousCheckbox.checked = false;
+        clearSortCache();
+        filteredParticipantsCache = null;
+        
+        // Refresh data
+        await fetchParticipants();
+        alert('Score submitted successfully!');
     } catch (error) {
         console.error('Error submitting score:', error);
         alert('Error submitting score. Please try again.');

@@ -9,8 +9,13 @@
 <body>
     <div class="app-container">
         <nav class="sidebar">
-            <div class="logo">
-                <h1>PEO BBC</h1>
+            <div class="sidebar-header">
+                <div class="logo">
+                    <h1>PEO BBC</h1>
+                </div>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span class="toggle-icon">☰</span>
+                </button>
             </div>
             <ul class="nav-links">
                 <li><a href="#" data-page="checkin" class="active">Check In</a></li>
@@ -29,15 +34,16 @@
                     <table id="participants-table">
                         <thead>
                             <tr>
-                                <th>Team Number</th>
-                                <th>Team Name</th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Grade</th>
-                                <th>School</th>
-                                <th>Category</th>
-                                <th>Arrival Time</th>
-                                <th>Status</th>
+                                <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="firstName">First Name <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="lastName">Last Name <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="grade">Grade <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="schoolName">School <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="arrivalTime">Arrival Time <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="waiver">Waiver <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -47,112 +53,137 @@
             </div>
 
             <div id="judging-page" class="page">
-                <h2>Judging</h2>
-                <div class="judging-form">
-                    <div class="team-selector">
-                        <select id="team-select">
-                            <option value="">Select a Team</option>
-                        </select>
+                <div class="judging-container">
+                    <div class="judging-header">
+                        <h2>Judge Teams</h2>
                     </div>
-                    <div class="criteria-container">
-                        <div class="criteria-item">
-                            <label>Criteria 1</label>
-                            <select class="criteria-score">
-                                <option value="">Select Score</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
+                    <form id="judging-form" class="judging-form">
+                        <div class="form-section">
+                            <h3>Team Selection</h3>
+                            <div class="form-group">
+                                <label for="team-select">Select Team</label>
+                                <select id="team-select" required>
+                                    <option value="">Select a team...</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="criteria-item">
-                            <label>Criteria 2</label>
-                            <select class="criteria-score">
-                                <option value="">Select Score</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
+
+                        <div class="form-section">
+                            <h3>Qualification Criteria</h3>
+                            <div class="form-group">
+                                <label for="bridge-weight">Bridge Weight (g)</label>
+                                <input type="number" id="bridge-weight" required min="0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="bridge-weight-supported">Bridge Length (mm)</label>
+                                <input type="number" id="bridge-weight-supported" required min="0" step="0.1">
+                            </div>
                         </div>
-                        <div class="criteria-item">
-                            <label>Criteria 3</label>
-                            <select class="criteria-score">
-                                <option value="">Select Score</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
+
+                        <div class="form-section">
+                            <h3>Judging Criteria</h3>
+                            <div class="criteria-grid">
+                                <div class="criteria-item">
+                                    <label for="criteria1">Presentation</label>
+                                    <select id="criteria1" class="criteria-score" required>
+                                        <option value="">Score</option>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                                <div class="criteria-item">
+                                    <label for="criteria2">Creativity</label>
+                                    <select id="criteria2" class="criteria-score" required>
+                                        <option value="">Score</option>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                                <div class="criteria-item">
+                                    <label for="criteria3">Construction Quality</label>
+                                    <select id="criteria3" class="criteria-score" required>
+                                        <option value="">Score</option>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                                <div class="criteria-item">
+                                    <label for="criteria4">Construction Technique</label>
+                                    <select id="criteria4" class="criteria-score" required>
+                                        <option value="">Score</option>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                                <div class="criteria-item">
+                                    <label for="criteria5">Aesthetics</label>
+                                    <select id="criteria5" class="criteria-score" required>
+                                        <option value="">Score</option>
+                                        <option value="0">0</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="adventurous-checkbox">
+                                <input type="checkbox" id="most-adventurous" name="most-adventurous">
+                                <label for="most-adventurous">Most adventurous?</label>
+                            </div>
                         </div>
-                        <div class="criteria-item">
-                            <label>Criteria 4</label>
-                            <select class="criteria-score">
-                                <option value="">Select Score</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
+
+                        <div class="form-section">
+                            <h3>Comments</h3>
+                            <div class="comments-section">
+                                <textarea id="judge-comments" rows="3"></textarea>
+                            </div>
                         </div>
-                        <div class="criteria-item">
-                            <label>Criteria 5</label>
-                            <select class="criteria-score">
-                                <option value="">Select Score</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="comments-section">
-                        <label>Comments</label>
-                        <textarea id="judge-comments" rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="bridge-weight">Bridge Weight (g):</label>
-                        <input type="number" id="bridge-weight" min="0" step="0.1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="bridge-weight-supported">Weight Supported (kg):</label>
-                        <input type="number" id="bridge-weight-supported" min="0" step="0.1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="bridge-weight-supported">Most Adventurous?</label>
-                        <input type="checkbox" id="most-adventurous">
-                    </div>
-                    <button id="submit-judging" class="submit-button">Submit Score</button>
+
+                        <button type="submit" class="submit-button">Submit Score</button>
+                    </form>
                 </div>
             </div>
 
@@ -164,11 +195,12 @@
                         <table id="junior-leaderboard">
                             <thead>
                                 <tr>
-                                    <th>Team Number</th>
-                                    <th>Team Name</th>
-                                    <th>Category</th>
-                                    <th>Status</th>
-                                    <th>Score</th>
+                                    <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="mostAdventurous">Most Adventurous <span class="sort-icon"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="junior-leaderboard-body"></tbody>
@@ -179,11 +211,12 @@
                         <table id="senior-leaderboard">
                             <thead>
                                 <tr>
-                                    <th>Team Number</th>
-                                    <th>Team Name</th>
-                                    <th>Category</th>
-                                    <th>Status</th>
-                                    <th>Score</th>
+                                    <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort="mostAdventurous">Most Adventurous <span class="sort-icon"></span></th>
                                 </tr>
                             </thead>
                             <tbody id="senior-leaderboard-body"></tbody>
@@ -209,6 +242,22 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Custom Modal for Waiver Confirmation -->
+    <div id="waiver-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Waiver Confirmation</h3>
+            </div>
+            <div class="modal-body">
+                <p>This participant doesn't have a signed waiver. Have you received the signed waiver?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="waiver-cancel" class="modal-button modal-button-cancel">No</button>
+                <button id="waiver-confirm" class="modal-button modal-button-confirm">Yes</button>
+            </div>
+        </div>
     </div>
 </body>
 </html> 
