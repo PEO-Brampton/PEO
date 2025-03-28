@@ -1,7 +1,7 @@
 import './styles.css';
 import { db } from './firebase';
-import { collection, getDocs, updateDoc, doc, addDoc, query, where, serverTimestamp, orderBy } from 'firebase/firestore';
-import { Participant, JudgingCriteria } from './types';
+import { collection, getDocs, updateDoc, doc, addDoc, query, where, serverTimestamp, orderBy, getDoc } from 'firebase/firestore';
+import { Participant, JudgingCriteria, JudgeScore } from './types';
 
 // Constants
 const BASE_URL = '/PEO';
@@ -27,6 +27,8 @@ const sidebar = document.querySelector('.sidebar') as HTMLElement;
 const waiverModal = document.getElementById('waiver-modal') as HTMLDivElement;
 const waiverConfirmBtn = document.getElementById('waiver-confirm') as HTMLButtonElement;
 const waiverCancelBtn = document.getElementById('waiver-cancel') as HTMLButtonElement;
+const navToggle = document.getElementById('nav-toggle') as HTMLButtonElement;
+const navDropdown = document.querySelector('.nav-dropdown') as HTMLElement;
 
 // State
 let participants: Participant[] = [];
@@ -135,6 +137,26 @@ sidebarToggle?.addEventListener('click', () => {
     }
 });
 
+// Navigation toggle functionality
+navToggle?.addEventListener('click', () => {
+    navDropdown?.classList.toggle('active');
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!navDropdown?.contains(e.target as Node) && 
+        !navToggle?.contains(e.target as Node)) {
+        navDropdown?.classList.remove('active');
+    }
+});
+
+// Close dropdown when clicking a link
+navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+        navDropdown?.classList.remove('active');
+    });
+});
+
 // Firebase Functions
 async function fetchParticipants() {
     try {
@@ -144,7 +166,8 @@ async function fetchParticipants() {
         
         participants = querySnapshot.docs.map(doc => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
+            judgeScores: doc.data().judgeScores || [] // Ensure judgeScores is initialized
         })) as Participant[];
         
         // Update UI
@@ -217,7 +240,8 @@ async function importParticipants(csvData: string) {
             waiver: values[8]?.toLowerCase() === 'yes',
             status: 'registered',
             checkedIn: false,
-            judged: false
+            judged: false,
+            judgeScores: []
         };
         
         await addDoc(collection(db, 'participants'), participant);
@@ -251,7 +275,8 @@ async function generateRandomParticipants() {
             waiver: Math.random() > 0.5, // Randomly set waiver status
             status: 'registered',
             checkedIn: false,
-            judged: false
+            judged: false,
+            judgeScores: []
         };
         
         await addDoc(collection(db, 'participants'), participant);
@@ -284,33 +309,25 @@ function sortParticipants(participants: Participant[], field: keyof Participant,
 }
 
 function updateSortIndicators(isLeaderboard: boolean = false, category?: 'junior' | 'senior') {
+    // Remove all sort indicators first
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('asc', 'desc');
+    });
+
     if (isLeaderboard && category) {
         const sortState = leaderboardSort[category];
-        const table = document.querySelector(`#${category}-leaderboard .leaderboard-table`);
-        
+        const table = document.querySelector(`#${category}-leaderboard table`);
         if (!table) return;
-        
-        // Remove all sort indicators
-        table.querySelectorAll('.sortable').forEach(th => {
-            th.classList.remove('asc', 'desc');
-        });
-        
-        // Add sort indicator to the active column
-        const activeHeader = table.querySelector(`[data-sort="${sortState.field}"]`);
+
+        const activeHeader = table.querySelector(`th[data-sort="${sortState.field}"]`);
         if (activeHeader) {
             activeHeader.classList.add(sortState.direction);
         }
     } else {
         const table = document.getElementById('participants-table');
         if (!table) return;
-        
-        // Remove all sort indicators
-        table.querySelectorAll('.sortable').forEach(th => {
-            th.classList.remove('asc', 'desc');
-        });
-        
-        // Add sort indicator to the active column
-        const activeHeader = table.querySelector(`[data-sort="${currentSort.field}"]`);
+
+        const activeHeader = table.querySelector(`th[data-sort="${currentSort.field}"]`);
         if (activeHeader) {
             activeHeader.classList.add(currentSort.direction);
         }
@@ -319,47 +336,157 @@ function updateSortIndicators(isLeaderboard: boolean = false, category?: 'junior
 
 function handleSort(field: keyof Participant, isLeaderboard: boolean = false, category?: 'junior' | 'senior') {
     if (isLeaderboard && category) {
-        const sortState = leaderboardSort[category];
-        
-        if (sortState.field === field) {
-            // Toggle direction if clicking the same column
-            sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            // Set new field and default to ascending
-            sortState.field = field;
-            sortState.direction = 'asc';
-        }
-
-        updateSortIndicators(true, category);
+        const currentSort = leaderboardSort[category];
+        leaderboardSort[category] = {
+            field,
+            direction: currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc'
+        };
         updateLeaderboards();
     } else {
-        if (currentSort.field === field) {
-            // Toggle direction if clicking the same column
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            // Set new field and default to ascending
-            currentSort.field = field;
-            currentSort.direction = 'asc';
-        }
-
-        updateSortIndicators(false);
+        currentSort = {
+            field,
+            direction: currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc'
+        };
         renderParticipants(sortParticipants(participants, currentSort.field, currentSort.direction));
     }
 }
 
-// Update the event listeners for sortable headers
-document.querySelectorAll('.sortable').forEach(th => {
+// Update the updateLeaderboards function to use the correct sort state
+function updateLeaderboards() {
+    const juniorTable = document.querySelector('#junior-leaderboard table tbody');
+    const seniorTable = document.querySelector('#senior-leaderboard table tbody');
+    
+    if (!juniorTable || !seniorTable) return;
+
+    // Clear existing rows
+    juniorTable.innerHTML = '';
+    seniorTable.innerHTML = '';
+
+    // Filter participants to only show judged or qualified teams
+    const filteredParticipants = participants.filter(p => 
+        p.status === 'judged' || p.status === 'qualified'
+    );
+
+    // Sort participants based on the current sort field for each category
+    const sortedJuniorParticipants = [...filteredParticipants]
+        .filter(p => p.category === 'Junior')
+        .sort((a, b) => {
+            const currentSort = leaderboardSort.junior;
+            let comparison = 0;
+
+            switch (currentSort.field) {
+                case 'teamNumber':
+                    comparison = a.teamNumber.localeCompare(b.teamNumber);
+                    break;
+                case 'teamName':
+                    comparison = a.teamName.localeCompare(b.teamName);
+                    break;
+                case 'status':
+                    comparison = a.status.localeCompare(b.status);
+                    break;
+                case 'score':
+                    const aScore = (a.judgeScores || []).length > 0 
+                        ? (a.judgeScores || []).reduce((sum, score) => sum + score.criteria1 + score.criteria2 + score.criteria3 + score.criteria4 + score.criteria5, 0) / (a.judgeScores || []).length
+                        : 0;
+                    const bScore = (b.judgeScores || []).length > 0
+                        ? (b.judgeScores || []).reduce((sum, score) => sum + score.criteria1 + score.criteria2 + score.criteria3 + score.criteria4 + score.criteria5, 0) / (b.judgeScores || []).length
+                        : 0;
+                    comparison = bScore - aScore;
+                    break;
+                default:
+                    comparison = 0;
+            }
+
+            return currentSort.direction === 'desc' ? -comparison : comparison;
+        });
+
+    const sortedSeniorParticipants = [...filteredParticipants]
+        .filter(p => p.category === 'Senior')
+        .sort((a, b) => {
+            const currentSort = leaderboardSort.senior;
+            let comparison = 0;
+
+            switch (currentSort.field) {
+                case 'teamNumber':
+                    comparison = a.teamNumber.localeCompare(b.teamNumber);
+                    break;
+                case 'teamName':
+                    comparison = a.teamName.localeCompare(b.teamName);
+                    break;
+                case 'status':
+                    comparison = a.status.localeCompare(b.status);
+                    break;
+                case 'score':
+                    const aScore = (a.judgeScores || []).length > 0 
+                        ? (a.judgeScores || []).reduce((sum, score) => sum + score.criteria1 + score.criteria2 + score.criteria3 + score.criteria4 + score.criteria5, 0) / (a.judgeScores || []).length
+                        : 0;
+                    const bScore = (b.judgeScores || []).length > 0
+                        ? (b.judgeScores || []).reduce((sum, score) => sum + score.criteria1 + score.criteria2 + score.criteria3 + score.criteria4 + score.criteria5, 0) / (b.judgeScores || []).length
+                        : 0;
+                    comparison = bScore - aScore;
+                    break;
+                default:
+                    comparison = 0;
+            }
+
+            return currentSort.direction === 'desc' ? -comparison : comparison;
+        });
+
+    // Update junior table
+    sortedJuniorParticipants.forEach(participant => {
+        const row = document.createElement('tr');
+        const averageScore = (participant.judgeScores || []).length > 0
+            ? ((participant.judgeScores || []).reduce((sum, score) => sum + score.criteria1 + score.criteria2 + score.criteria3 + score.criteria4 + score.criteria5, 0) / (participant.judgeScores || []).length).toFixed(1)
+            : '-';
+        const isMostAdventurous = (participant.judgeScores || []).some(score => score.mostAdventurous);
+        
+        row.innerHTML = `
+            <td>${participant.teamNumber}</td>
+            <td>${participant.teamName}</td>
+            <td>${participant.status}</td>
+            <td>${averageScore}</td>
+            <td>${isMostAdventurous ? '✓' : ''}</td>
+        `;
+        juniorTable.appendChild(row);
+    });
+
+    // Update senior table
+    sortedSeniorParticipants.forEach(participant => {
+        const row = document.createElement('tr');
+        const averageScore = (participant.judgeScores || []).length > 0
+            ? ((participant.judgeScores || []).reduce((sum, score) => sum + score.criteria1 + score.criteria2 + score.criteria3 + score.criteria4 + score.criteria5, 0) / (participant.judgeScores || []).length).toFixed(1)
+            : '-';
+        const isMostAdventurous = (participant.judgeScores || []).some(score => score.mostAdventurous);
+        
+        row.innerHTML = `
+            <td>${participant.teamNumber}</td>
+            <td>${participant.teamName}</td>
+            <td>${participant.status}</td>
+            <td>${averageScore}</td>
+            <td>${isMostAdventurous ? '✓' : ''}</td>
+        `;
+        seniorTable.appendChild(row);
+    });
+
+    // Update sort indicators
+    updateSortIndicators(true);
+}
+
+// Update the event listeners for sorting
+document.querySelectorAll('th.sortable').forEach(th => {
     th.addEventListener('click', () => {
         const field = th.getAttribute('data-sort') as keyof Participant;
-        if (field) {
-            const leaderboardTable = th.closest('.leaderboard-table');
-            if (leaderboardTable) {
-                const category = leaderboardTable.closest('#junior-leaderboard') ? 'junior' : 'senior';
-                handleSort(field, true, category);
-            } else {
-                handleSort(field, false);
-            }
-        }
+        if (!field) return;
+
+        const table = th.closest('table');
+        if (!table) return;
+
+        // Determine if this is a leaderboard table
+        const isLeaderboard = table.closest('.leaderboard-section') !== null;
+        const category = table.closest('#junior-leaderboard') ? 'junior' : 
+                        table.closest('#senior-leaderboard') ? 'senior' : undefined;
+
+        handleSort(field, isLeaderboard, category);
     });
 });
 
@@ -510,75 +637,6 @@ function populateTeamSelect() {
         });
 }
 
-function updateLeaderboards() {
-    if (!juniorLeaderboardBody || !seniorLeaderboardBody) return;
-    
-    // Create a Map to store unique teams
-    const uniqueTeams = new Map<string, Participant>();
-    
-    // Get only one entry per team from judged participants
-    participants
-        .filter(p => p.status === 'judged')
-        .forEach(participant => {
-            if (!uniqueTeams.has(participant.teamNumber)) {
-                uniqueTeams.set(participant.teamNumber, participant);
-            }
-        });
-    
-    // Convert to array and sort
-    const judgedTeams = Array.from(uniqueTeams.values());
-    
-    // Sort junior teams
-    const juniorTeams = sortParticipants(
-        judgedTeams.filter(p => p.category === 'Junior'),
-        leaderboardSort.junior.field,
-        leaderboardSort.junior.direction
-    );
-    
-    // Sort senior teams
-    const seniorTeams = sortParticipants(
-        judgedTeams.filter(p => p.category === 'Senior'),
-        leaderboardSort.senior.field,
-        leaderboardSort.senior.direction
-    );
-    
-    // Render junior teams
-    const juniorFragment = document.createDocumentFragment();
-    juniorTeams.forEach(team => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${team.teamNumber}</td>
-            <td>${team.teamName}</td>
-            <td>${team.category}</td>
-            <td>${team.status}</td>
-            <td>${team.qualified ? 'Yes' : 'No'}</td>
-            <td>${team.score}</td>
-            <td>${team.mostAdventurous ? '⭐' : ''}</td>
-        `;
-        juniorFragment.appendChild(row);
-    });
-    juniorLeaderboardBody.innerHTML = '';
-    juniorLeaderboardBody.appendChild(juniorFragment);
-    
-    // Render senior teams
-    const seniorFragment = document.createDocumentFragment();
-    seniorTeams.forEach(team => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${team.teamNumber}</td>
-            <td>${team.teamName}</td>
-            <td>${team.category}</td>
-            <td>${team.status}</td>
-            <td>${team.qualified ? 'Yes' : 'No'}</td>
-            <td>${team.score}</td>
-            <td>${team.mostAdventurous ? '⭐' : ''}</td>
-        `;
-        seniorFragment.appendChild(row);
-    });
-    seniorLeaderboardBody.innerHTML = '';
-    seniorLeaderboardBody.appendChild(seniorFragment);
-}
-
 // Event Handlers
 let pendingCheckInId: string | null = null;
 
@@ -712,7 +770,7 @@ judgingForm.addEventListener('submit', async (e) => {
     
     try {
         const formData = new FormData(judgingForm);
-        const validation = validateForm(formData, false);
+        const validation = validateForm(formData);
         
         if (!validation.isValid) {
             alert(validation.errors.join('\n'));
@@ -720,35 +778,61 @@ judgingForm.addEventListener('submit', async (e) => {
         }
 
         const selectedTeamId = formData.get('team-select') as string;
-        const mostAdventurous = formData.get('most-adventurous') === 'on';
-
-        // Get criteria scores from formData
-        const criteria: JudgingCriteria = {
-            criteria1: Number(formData.get('criteria1') || 0),
-            criteria2: Number(formData.get('criteria2') || 0),
-            criteria3: Number(formData.get('criteria3') || 0),
-            criteria4: Number(formData.get('criteria4') || 0),
-            criteria5: Number(formData.get('criteria5') || 0)
+        const judgeId = formData.get('judge-select') as string;
+        
+        // Create the judge's score object
+        const judgeScore: JudgeScore = {
+            judgeId,
+            criteria1: parseInt(formData.get('criteria1') as string),
+            criteria2: parseInt(formData.get('criteria2') as string),
+            criteria3: parseInt(formData.get('criteria3') as string),
+            criteria4: parseInt(formData.get('criteria4') as string),
+            criteria5: parseInt(formData.get('criteria5') as string),
+            comments: formData.get('judge-comments') as string,
+            mostAdventurous: formData.get('most-adventurous') === 'on'
         };
 
-        const judgeComments = formData.get('judge-comments') as string;
-        const totalScore = Object.values(criteria).reduce((sum, score) => sum + score, 0);
-
         const participantRef = doc(db, 'participants', selectedTeamId);
+        const participantDoc = await getDoc(participantRef);
+        const participant = participantDoc.data() as Participant;
+
+        // Update or add the judge's score
+        let judgeScores = participant.judgeScores || [];
+        const existingScoreIndex = judgeScores.findIndex(s => s.judgeId === judgeId);
+        
+        if (existingScoreIndex >= 0) {
+            // Update existing score
+            judgeScores[existingScoreIndex] = judgeScore;
+        } else {
+            // Add new score
+            judgeScores.push(judgeScore);
+        }
+
+        // Calculate average score
+        const totalScore = judgeScores.reduce((sum, score) => {
+            return sum + (
+                score.criteria1 + 
+                score.criteria2 + 
+                score.criteria3 + 
+                score.criteria4 + 
+                score.criteria5
+            );
+        }, 0);
+        const averageScore = totalScore / (judgeScores.length * 5); // 5 criteria per judge
+
+        // Determine if team is most adventurous (if any judge marks it)
+        const isMostAdventurous = judgeScores.some(score => score.mostAdventurous);
+
+        // Update participant document
         await updateDoc(participantRef, {
-            status: 'judged',
-            score: totalScore,
-            comments: judgeComments,
-            mostAdventurous,
-            ...criteria
+            judgeScores,
+            score: averageScore,
+            mostAdventurous: isMostAdventurous,
+            status: 'judged'
         });
 
-        // Reset form and clear caches
+        // Reset form and refresh data
         judgingForm.reset();
-        clearSortCache();
-        filteredParticipantsCache = null;
-        
-        // Refresh data
         await fetchParticipants();
         alert('Score submitted successfully!');
     } catch (error) {

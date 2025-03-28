@@ -14,10 +14,7 @@ export interface Participant {
     judged: boolean;
     judgedAt?: Date;
     waiver?: boolean;
-    score?: number;
-    comments?: string;
-    bridgeWeightQualified?: boolean;
-    bridgeLengthQualified?: boolean;
+    judgeScores: JudgeScore[];
     qualified?: boolean;
     criteria1?: number;
     criteria2?: number;
@@ -25,6 +22,7 @@ export interface Participant {
     criteria4?: number;
     criteria5?: number;
     mostAdventurous?: boolean;
+    score?: number;
 }
 
 export interface JudgingCriteria {
@@ -33,4 +31,15 @@ export interface JudgingCriteria {
     criteria3: number;
     criteria4: number;
     criteria5: number;
+}
+
+export interface JudgeScore {
+    judgeId: string;
+    criteria1: number;
+    criteria2: number;
+    criteria3: number;
+    criteria4: number;
+    criteria5: number;
+    comments: string;
+    mostAdventurous: boolean;
 } 
