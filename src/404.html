@@ -5,8 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page Not Found - Bridge Building Competition</title>
     <script>
-        // Redirect to the main application
-        window.location.href = '/PEO/';
+        // Get the current path
+        const currentPath = window.location.pathname;
+        const baseUrl = '/PEO';
+        
+        // If the path starts with the base URL, try to extract the page
+        if (currentPath.startsWith(baseUrl)) {
+            const page = currentPath.replace(baseUrl, '').replace(/^\/+|\/+$/g, '');
+            const validPages = ['checkin', 'qualification', 'judging', 'leaderboard', 'admin'];
+            
+            // If it's a valid page, redirect to it
+            if (validPages.includes(page)) {
+                window.location.href = `${baseUrl}/${page}`;
+            } else {
+                // If it's not a valid page, redirect to the main page
+                window.location.href = `${baseUrl}/`;
+            }
+        } else {
+            // If the path doesn't start with the base URL, redirect to the main page
+            window.location.href = `${baseUrl}/`;
+        }
     </script>
 </head>
 <body>

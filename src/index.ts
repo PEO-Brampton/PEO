@@ -53,12 +53,18 @@ let filteredParticipantsCache: {
 
 // Initial route handling
 function handleInitialRoute() {
-    const path = window.location.pathname.replace(BASE_URL, '').replace('/', '') || 'checkin';
+    const path = window.location.pathname.replace(BASE_URL, '').replace(/^\/+|\/+$/g, '') || 'checkin';
     navigateToPage(path);
 }
 
 // Navigation
 function navigateToPage(pageId: string) {
+    // Validate page ID
+    const validPages = ['checkin', 'qualification', 'judging', 'leaderboard', 'admin'];
+    if (!validPages.includes(pageId)) {
+        pageId = 'checkin'; // Default to check-in page if invalid
+    }
+
     // Update active states
     navLinks.forEach(l => l.classList.remove('active'));
     const activeLink = document.querySelector(`[data-page="${pageId}"]`);
@@ -76,7 +82,7 @@ function navigateToPage(pageId: string) {
 
     // Update URL without page reload
     const newUrl = `${BASE_URL}/${pageId}`;
-    window.history.pushState({}, '', newUrl);
+    window.history.pushState({ pageId }, '', newUrl);
 }
 
 // Initialize the application
@@ -112,9 +118,9 @@ navLinks.forEach(link => {
 });
 
 // Handle browser back/forward buttons
-window.addEventListener('popstate', () => {
-    const path = window.location.pathname.replace(BASE_URL, '').replace('/', '') || 'checkin';
-    navigateToPage(path);
+window.addEventListener('popstate', (event) => {
+    const pageId = event.state?.pageId || 'checkin';
+    navigateToPage(pageId);
 });
 
 // Sidebar toggle functionality
