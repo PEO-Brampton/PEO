@@ -54,11 +54,9 @@ module.exports = {
     },
     compress: true,
     port: 9001,
-    historyApiFallback: {
-      rewrites: [
-        { from: /^\/PEO\/.*$/, to: '/index.html' },
-        { from: /./, to: '/index.html' }
-      ]
-    },
+    historyApiFallback: true,
+    devMiddleware: {
+      publicPath: '/PEO/'
+    }
   },
 }; 

@@ -19,6 +19,7 @@
             </div>
             <ul class="nav-links">
                 <li><a href="#" data-page="checkin" class="active">Check In</a></li>
+                <li><a href="#" data-page="qualification">Qualification</a></li>
                 <li><a href="#" data-page="judging">Judging</a></li>
                 <li><a href="#" data-page="leaderboard">Leaderboard</a></li>
                 <li><a href="#" data-page="admin">Admin</a></li>
@@ -52,6 +53,43 @@
                 </div>
             </div>
 
+            <div id="qualification-page" class="page">
+                <div class="judging-container">
+                    <div class="judging-header">
+                        <h2>Team Qualification</h2>
+                    </div>
+                    <form id="qualification-form" class="judging-form">
+                        <div class="form-section">
+                            <h3>Team Selection</h3>
+                            <div class="form-group">
+                                <label for="qualification-team-select">Select Team</label>
+                                <select id="qualification-team-select" name="qualification-team-select" required>
+                                    <option value="">Select a team...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3>Qualification Criteria</h3>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="bridge-weight" name="bridge-weight">
+                                    Bridge Weight Qualified
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="bridge-weight-supported" name="bridge-weight-supported">
+                                    Bridge Length Qualified
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-button">Submit Qualification</button>
+                    </form>
+                </div>
+            </div>
+
             <div id="judging-page" class="page">
                 <div class="judging-container">
                     <div class="judging-header">
@@ -62,21 +100,9 @@
                             <h3>Team Selection</h3>
                             <div class="form-group">
                                 <label for="team-select">Select Team</label>
-                                <select id="team-select" required>
+                                <select id="team-select" name="team-select" required>
                                     <option value="">Select a team...</option>
                                 </select>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3>Qualification Criteria</h3>
-                            <div class="form-group">
-                                <label for="bridge-weight">Bridge Weight (g)</label>
-                                <input type="number" id="bridge-weight" required min="0" step="0.1">
-                            </div>
-                            <div class="form-group">
-                                <label for="bridge-weight-supported">Bridge Length (mm)</label>
-                                <input type="number" id="bridge-weight-supported" required min="0" step="0.1">
                             </div>
                         </div>
 
@@ -85,8 +111,8 @@
                             <div class="criteria-grid">
                                 <div class="criteria-item">
                                     <label for="criteria1">Presentation</label>
-                                    <select id="criteria1" class="criteria-score" required>
-                                        <option value="">Score</option>
+                                    <select id="criteria1" name="criteria1" class="criteria-score" required>
+                                        <option value="">Select score...</option>
                                         <option value="0">0</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -102,8 +128,8 @@
                                 </div>
                                 <div class="criteria-item">
                                     <label for="criteria2">Creativity</label>
-                                    <select id="criteria2" class="criteria-score" required>
-                                        <option value="">Score</option>
+                                    <select id="criteria2" name="criteria2" class="criteria-score" required>
+                                        <option value="">Select score...</option>
                                         <option value="0">0</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -119,8 +145,8 @@
                                 </div>
                                 <div class="criteria-item">
                                     <label for="criteria3">Construction Quality</label>
-                                    <select id="criteria3" class="criteria-score" required>
-                                        <option value="">Score</option>
+                                    <select id="criteria3" name="criteria3" class="criteria-score" required>
+                                        <option value="">Select score...</option>
                                         <option value="0">0</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -136,8 +162,8 @@
                                 </div>
                                 <div class="criteria-item">
                                     <label for="criteria4">Construction Technique</label>
-                                    <select id="criteria4" class="criteria-score" required>
-                                        <option value="">Score</option>
+                                    <select id="criteria4" name="criteria4" class="criteria-score" required>
+                                        <option value="">Select score...</option>
                                         <option value="0">0</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -153,8 +179,8 @@
                                 </div>
                                 <div class="criteria-item">
                                     <label for="criteria5">Aesthetics</label>
-                                    <select id="criteria5" class="criteria-score" required>
-                                        <option value="">Score</option>
+                                    <select id="criteria5" name="criteria5" class="criteria-score" required>
+                                        <option value="">Select score...</option>
                                         <option value="0">0</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -168,17 +194,18 @@
                                         <option value="10">10</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="adventurous-checkbox">
-                                <input type="checkbox" id="most-adventurous" name="most-adventurous">
-                                <label for="most-adventurous">Most adventurous?</label>
+                                <div class="form-group">
+                                    <label for="most-adventurous">Most adventurous?</label>
+                                    <input type="checkbox" id="most-adventurous" name="most-adventurous">
+                                </div>
                             </div>
                         </div>
 
                         <div class="form-section">
-                            <h3>Comments</h3>
-                            <div class="comments-section">
-                                <textarea id="judge-comments" rows="3"></textarea>
+                            <h3>Additional Notes</h3>
+                            <div class="form-group">
+                                <label for="judge-comments">Comments</label>
+                                <textarea id="judge-comments" name="judge-comments" rows="4"></textarea>
                             </div>
                         </div>
 
@@ -190,37 +217,43 @@
             <div id="leaderboard-page" class="page">
                 <h2>Leaderboard</h2>
                 <div class="leaderboard-container">
-                    <div class="category-section">
-                        <h3>Junior Category</h3>
-                        <table id="junior-leaderboard">
-                            <thead>
-                                <tr>
-                                    <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="mostAdventurous">Most Adventurous <span class="sort-icon"></span></th>
-                                </tr>
-                            </thead>
-                            <tbody id="junior-leaderboard-body"></tbody>
-                        </table>
+                    <div id="junior-leaderboard" class="leaderboard-section">
+                        <h3>Junior Teams</h3>
+                        <div class="table-container">
+                            <table class="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="qualified">Qualified <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="mostAdventurous">Most Adventurous <span class="sort-icon"></span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="junior-leaderboard-body"></tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="category-section">
-                        <h3>Senior Category</h3>
-                        <table id="senior-leaderboard">
-                            <thead>
-                                <tr>
-                                    <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
-                                    <th class="sortable" data-sort="mostAdventurous">Most Adventurous <span class="sort-icon"></span></th>
-                                </tr>
-                            </thead>
-                            <tbody id="senior-leaderboard-body"></tbody>
-                        </table>
+                    <div id="senior-leaderboard" class="leaderboard-section">
+                        <h3>Senior Teams</h3>
+                        <div class="table-container">
+                            <table class="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="category">Category <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="qualified">Qualified <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
+                                        <th class="sortable" data-sort="mostAdventurous">Most Adventurous <span class="sort-icon"></span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="senior-leaderboard-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

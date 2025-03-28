@@ -8,7 +8,7 @@ export interface Participant {
     schoolName: string;
     category: 'Junior' | 'Senior';
     arrivalTime: string;
-    status: 'registered' | 'checked in' | 'waiting' | 'judged';
+    status: 'registered' | 'checked in' | 'waiting' | 'qualified' | 'judged';
     checkedIn: boolean;
     checkedInAt?: Date;
     judged: boolean;
@@ -16,8 +16,9 @@ export interface Participant {
     waiver?: boolean;
     score?: number;
     comments?: string;
-    bridgeWeight?: number;
-    bridgeWeightSupported?: number;
+    bridgeWeightQualified?: boolean;
+    bridgeLengthQualified?: boolean;
+    qualified?: boolean;
     criteria1?: number;
     criteria2?: number;
     criteria3?: number;
