@@ -2,7 +2,7 @@
 console.log('TypeScript initialized'); 
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, orderBy, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, orderBy, writeBatch, Firestore } from 'firebase/firestore';
 import './styles.css';
 
 // Types
@@ -33,8 +33,15 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+let app;
+let db: Firestore | undefined;
+try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    console.log('Firebase initialized successfully');
+} catch (error) {
+    console.error('Error initializing Firebase:', error);
+}
 
 // Leaderboard state
 type SortDirection = 'asc' | 'desc';
@@ -45,14 +52,22 @@ let currentSort = {
 
 // Update leaderboards
 async function updateLeaderboards() {
+    if (!db) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
     try {
         console.log('Updating leaderboards...');
         // Get all participants with status 'judged'
         const participantsRef = collection(db, 'participants');
+        console.log('Created participants reference');
+        
         const participantsQuery = query(
             participantsRef,
             where('status', '==', 'judged')
         );
+        console.log('Created query');
         
         const querySnapshot = await getDocs(participantsQuery);
         console.log(`Found ${querySnapshot.size} judged teams`);
@@ -61,13 +76,19 @@ async function updateLeaderboards() {
             id: doc.id,
             ...doc.data()
         })) as Participant[];
+        console.log('Processed participants:', participants);
 
         // Clear existing rows
         const juniorTable = document.getElementById('junior-leaderboard')?.querySelector('tbody');
         const seniorTable = document.getElementById('senior-leaderboard')?.querySelector('tbody');
         
-        if (juniorTable) juniorTable.innerHTML = '';
-        if (seniorTable) seniorTable.innerHTML = '';
+        if (!juniorTable || !seniorTable) {
+            console.error('Could not find leaderboard tables');
+            return;
+        }
+
+        juniorTable.innerHTML = '';
+        seniorTable.innerHTML = '';
 
         // Sort participants by score in descending order
         participants.sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -84,10 +105,10 @@ async function updateLeaderboards() {
                 <td>${participant.mostAdventurous ? 'Yes' : 'No'}</td>
             `;
 
-            if (participant.category === 'junior' && juniorTable) {
+            if (participant.category === 'junior') {
                 juniorTable.appendChild(row);
                 console.log('Added to junior table');
-            } else if (participant.category === 'senior' && seniorTable) {
+            } else if (participant.category === 'senior') {
                 seniorTable.appendChild(row);
                 console.log('Added to senior table');
             }
@@ -158,6 +179,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Update team status
 async function updateTeamStatus(teamNumber: string, newStatus: 'judged' | 'qualified') {
+    if (!db) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
     try {
         // Get all participants with the same team number
         const participantsRef = collection(db, 'participants');
@@ -223,6 +249,11 @@ document.getElementById('judging-form')?.addEventListener('submit', async (e) =>
 
 // Update participants table
 async function updateParticipantsTable() {
+    if (!db) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
     try {
         const participantsRef = collection(db, 'participants');
         const querySnapshot = await getDocs(participantsRef);
