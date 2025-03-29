@@ -2,7 +2,7 @@
 console.log('TypeScript initialized'); 
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, orderBy, writeBatch } from 'firebase/firestore';
 import './styles.css';
 
 // Types
@@ -13,6 +13,12 @@ interface Participant {
     status: 'judged' | 'qualified';
     score: number;
     category: 'junior' | 'senior';
+    firstName: string;
+    lastName: string;
+    grade: string;
+    schoolName: string;
+    arrivalTime?: string;
+    waiver: boolean;
 }
 
 // Firebase configuration
@@ -160,4 +166,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial update
     updateLeaderboards();
-}); 
+});
+
+// Update team status
+async function updateTeamStatus(teamNumber: string, newStatus: 'judged' | 'qualified') {
+    try {
+        // Get all participants with the same team number
+        const participantsRef = collection(db, 'participants');
+        const teamQuery = query(
+            participantsRef,
+            where('teamNumber', '==', teamNumber)
+        );
+        
+        const querySnapshot = await getDocs(teamQuery);
+        const batch = writeBatch(db);
+        
+        // Update each team member's status
+        querySnapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { status: newStatus });
+        });
+        
+        // Commit the batch update
+        await batch.commit();
+        
+        // Update the UI
+        updateParticipantsTable();
+        updateLeaderboards();
+    } catch (error) {
+        console.error('Error updating team status:', error);
+    }
+}
+
+// Handle qualification form submission
+document.getElementById('qualification-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const teamSelect = document.getElementById('qualification-team-select') as HTMLSelectElement;
+    const teamNumber = teamSelect.value;
+    
+    if (!teamNumber) return;
+    
+    await updateTeamStatus(teamNumber, 'qualified');
+    teamSelect.value = '';
+});
+
+// Handle judging form submission
+document.getElementById('judging-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const teamSelect = document.getElementById('team-select') as HTMLSelectElement;
+    const teamNumber = teamSelect.value;
+    
+    if (!teamNumber) return;
+    
+    await updateTeamStatus(teamNumber, 'judged');
+    teamSelect.value = '';
+});
+
+// Update participants table
+async function updateParticipantsTable() {
+    try {
+        const participantsRef = collection(db, 'participants');
+        const querySnapshot = await getDocs(participantsRef);
+        const participants = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        })) as Participant[];
+
+        const tbody = document.getElementById('participants-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        participants.forEach(participant => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${participant.teamNumber}</td>
+                <td>${participant.teamName}</td>
+                <td>${participant.firstName}</td>
+                <td>${participant.lastName}</td>
+                <td>${participant.grade}</td>
+                <td>${participant.schoolName}</td>
+                <td>${participant.category}</td>
+                <td>${participant.arrivalTime || ''}</td>
+                <td>${participant.waiver ? 'Yes' : 'No'}</td>
+                <td>${participant.status || 'checked-in'}</td>
+                <td>
+                    <button class="action-button check-in-btn" data-id="${participant.id}">Check In</button>
+                    <button class="action-button waiting-btn" data-id="${participant.id}">Waiting</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error updating participants table:', error);
+    }
+} 
