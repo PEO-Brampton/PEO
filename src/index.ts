@@ -4,7 +4,7 @@ import { collection, getDocs, updateDoc, doc, addDoc, query, where, serverTimest
 import { Participant, JudgingCriteria, JudgeScore } from './types';
 
 // Constants
-const BASE_URL = '/PEO';
+const BASE_URL = '/PEO-BBC';
 
 // DOM Elements
 const navLinks = document.querySelectorAll('.nav-links a');

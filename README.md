@@ -22,7 +22,7 @@ A web application for managing the PEO Bridge Building Competition, including pa
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/PEO-Brampton/PEO.git
+git clone https://github.com/PEO-BBC-Brampton/PEO-BBC.git
 cd PEO
 ```
 
@@ -60,7 +60,7 @@ The application is structured as follows:
 ## Deployment
 
 The application is deployed to GitHub Pages at:
-https://peo-brampton.github.io/PEO/
+https://PEO-BBC-brampton.github.io/PEO-BBC/
 
 ## License
 

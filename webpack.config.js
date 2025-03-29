@@ -8,7 +8,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    publicPath: '/PEO/'
+    publicPath: '/PEO-BBC/'
   },
   module: {
     rules: [
@@ -23,7 +23,7 @@ module.exports = {
           {
             loader: MiniCssExtractPlugin.loader,
             options: {
-              publicPath: '/PEO/'
+              publicPath: '/PEO-BBC/'
             }
           },
           'css-loader'
@@ -37,7 +37,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
-      base: '/PEO/'
+      base: '/PEO-BBC/'
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -56,7 +56,7 @@ module.exports = {
     port: 9000,
     historyApiFallback: true,
     devMiddleware: {
-      publicPath: '/PEO/'
+      publicPath: '/PEO-BBC/'
     }
   },
 }; 
