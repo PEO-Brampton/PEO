@@ -115,61 +115,9 @@ body {
     width: 100%;
 }
 
-.sidebar {
-    width: 250px;
-    background-color: var(--primary-color);
-    color: white;
-    padding: 20px;
-    transition: width 0.3s ease;
-    position: relative;
-    height: 100vh;
-    overflow-x: hidden;
-}
-
-.sidebar.collapsed {
-    width: 60px;
-}
-
-.logo h1 {
-    margin: 0;
-    font-size: 1.5rem;
-}
-
-.sidebar-toggle {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.3s ease;
-}
-
-.sidebar-toggle:hover {
-    opacity: 0.8;
-}
-
-.sidebar.collapsed .logo h1 {
-    display: none;
-}
-
-.sidebar.collapsed .nav-links a {
-    padding: 15px;
-    justify-content: center;
-}
-
-.sidebar.collapsed .nav-links a span {
-    display: none;
-}
-
+/* Page visibility */
 .page {
     display: none;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
 }
 
 .page.active {

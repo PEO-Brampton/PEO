@@ -20,10 +20,11 @@
             
             // Use the path from query parameter if it exists, otherwise use the current path
             const currentPath = pathParam || path.replace(basePath, '');
+            console.log('Current path:', currentPath);
             
             // Show the appropriate page
             document.querySelectorAll('.page').forEach(page => {
-                page.style.display = 'none';
+                page.classList.remove('active');
             });
             
             let activePage = 'checkin-page';
@@ -40,8 +41,13 @@
                 activePage = 'admin-page';
             }
             
+            console.log('Setting active page:', activePage);
+            
             // Show the active page
-            document.getElementById(activePage).style.display = 'block';
+            const pageElement = document.getElementById(activePage);
+            if (pageElement) {
+                pageElement.classList.add('active');
+            }
             
             // Update leaderboard if on leaderboard page
             if (activePage === 'leaderboard-page') {
@@ -65,8 +71,10 @@
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const href = link.getAttribute('href');
-                window.history.pushState({}, '', href);
-                handleRoute();
+                if (href) {
+                    window.history.pushState({}, '', href);
+                    handleRoute();
+                }
             });
         });
 
