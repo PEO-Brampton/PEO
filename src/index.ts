@@ -46,16 +46,17 @@ let currentSort = {
 // Update leaderboards
 async function updateLeaderboards() {
     try {
-        // Get all participants
+        console.log('Updating leaderboards...');
+        // Get all participants with status 'judged'
         const participantsRef = collection(db, 'participants');
         const participantsQuery = query(
             participantsRef,
-            where('status', 'in', ['judged', 'qualified']),
-            orderBy('status'),
-            orderBy('score', 'desc')
+            where('status', '==', 'judged')
         );
         
         const querySnapshot = await getDocs(participantsQuery);
+        console.log(`Found ${querySnapshot.size} judged teams`);
+        
         const participants = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
@@ -68,28 +69,12 @@ async function updateLeaderboards() {
         if (juniorTable) juniorTable.innerHTML = '';
         if (seniorTable) seniorTable.innerHTML = '';
 
-        // Sort participants based on current sort state
-        participants.sort((a, b) => {
-            let comparison = 0;
-            switch (currentSort.field) {
-                case 'teamNumber':
-                    comparison = a.teamNumber.localeCompare(b.teamNumber);
-                    break;
-                case 'teamName':
-                    comparison = a.teamName.localeCompare(b.teamName);
-                    break;
-                case 'status':
-                    comparison = a.status.localeCompare(b.status);
-                    break;
-                case 'score':
-                    comparison = (b.score || 0) - (a.score || 0);
-                    break;
-            }
-            return currentSort.direction === 'asc' ? comparison : -comparison;
-        });
+        // Sort participants by score in descending order
+        participants.sort((a, b) => (b.score || 0) - (a.score || 0));
 
         // Update tables
         participants.forEach(participant => {
+            console.log(`Processing team: ${participant.teamNumber}, Category: ${participant.category}, Score: ${participant.score}`);
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${participant.teamNumber}</td>
@@ -99,16 +84,16 @@ async function updateLeaderboards() {
                 <td>${participant.mostAdventurous ? 'Yes' : 'No'}</td>
             `;
 
-            // Make sure we're appending to the correct table based on category
             if (participant.category === 'junior' && juniorTable) {
                 juniorTable.appendChild(row);
+                console.log('Added to junior table');
             } else if (participant.category === 'senior' && seniorTable) {
                 seniorTable.appendChild(row);
+                console.log('Added to senior table');
             }
         });
 
-        // Update sort indicators
-        updateSortIndicators();
+        console.log('Leaderboard update complete');
     } catch (error) {
         console.error('Error updating leaderboards:', error);
     }
