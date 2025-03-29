@@ -29,11 +29,11 @@
                 </button>
                 <div class="nav-dropdown">
                     <ul class="nav-links">
-                        <li><a href="#" data-page="checkin" class="active">Check In</a></li>
-                        <li><a href="#" data-page="qualification">Qualification</a></li>
-                        <li><a href="#" data-page="judging">Judging</a></li>
-                        <li><a href="#" data-page="leaderboard">Leaderboard</a></li>
-                        <li><a href="#" data-page="admin">Admin</a></li>
+                        <li><a href="/PEO/" class="nav-link">Check In</a></li>
+                        <li><a href="/PEO/qualification" class="nav-link">Qualification</a></li>
+                        <li><a href="/PEO/judging" class="nav-link">Judging</a></li>
+                        <li><a href="/PEO/leaderboard" class="nav-link">Leaderboard</a></li>
+                        <li><a href="/PEO/admin" class="nav-link">Admin</a></li>
                     </ul>
                 </div>
             </div>
@@ -326,8 +326,12 @@
             const path = window.location.pathname;
             const basePath = '/PEO';
             
-            // Remove the base path from the current path
-            const currentPath = path.replace(basePath, '');
+            // Get the path from query parameter if it exists
+            const urlParams = new URLSearchParams(window.location.search);
+            const pathParam = urlParams.get('p');
+            
+            // Use the path from query parameter if it exists, otherwise use the current path
+            const currentPath = pathParam || path.replace(basePath, '');
             
             // Show the appropriate page
             document.querySelectorAll('.page').forEach(page => {
@@ -336,18 +340,28 @@
             
             if (currentPath === '/' || currentPath === '') {
                 document.getElementById('checkin-page').style.display = 'block';
-            } else if (currentPath === '/qualification') {
+            } else if (currentPath === '/qualification' || currentPath === 'qualification') {
                 document.getElementById('qualification-page').style.display = 'block';
-            } else if (currentPath === '/judging') {
+            } else if (currentPath === '/judging' || currentPath === 'judging') {
                 document.getElementById('judging-page').style.display = 'block';
-            } else if (currentPath === '/leaderboard') {
+            } else if (currentPath === '/leaderboard' || currentPath === 'leaderboard') {
                 document.getElementById('leaderboard-page').style.display = 'block';
-            } else if (currentPath === '/admin') {
+                // Update leaderboard when showing the page
+                updateLeaderboards();
+            } else if (currentPath === '/admin' || currentPath === 'admin') {
                 document.getElementById('admin-page').style.display = 'block';
             } else {
                 // If no matching route, show check-in page
                 document.getElementById('checkin-page').style.display = 'block';
             }
+
+            // Update active state of navigation links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === window.location.pathname) {
+                    link.classList.add('active');
+                }
+            });
         }
 
         // Handle navigation
