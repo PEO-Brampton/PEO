@@ -338,27 +338,35 @@
                 page.style.display = 'none';
             });
             
+            let activePage = 'checkin-page';
+            
             if (currentPath === '/' || currentPath === '') {
-                document.getElementById('checkin-page').style.display = 'block';
+                activePage = 'checkin-page';
             } else if (currentPath === '/qualification' || currentPath === 'qualification') {
-                document.getElementById('qualification-page').style.display = 'block';
+                activePage = 'qualification-page';
             } else if (currentPath === '/judging' || currentPath === 'judging') {
-                document.getElementById('judging-page').style.display = 'block';
+                activePage = 'judging-page';
             } else if (currentPath === '/leaderboard' || currentPath === 'leaderboard') {
-                document.getElementById('leaderboard-page').style.display = 'block';
-                // Update leaderboard when showing the page
-                updateLeaderboards();
+                activePage = 'leaderboard-page';
             } else if (currentPath === '/admin' || currentPath === 'admin') {
-                document.getElementById('admin-page').style.display = 'block';
-            } else {
-                // If no matching route, show check-in page
-                document.getElementById('checkin-page').style.display = 'block';
+                activePage = 'admin-page';
+            }
+            
+            // Show the active page
+            document.getElementById(activePage).style.display = 'block';
+            
+            // Update leaderboard if on leaderboard page
+            if (activePage === 'leaderboard-page') {
+                if (typeof updateLeaderboards === 'function') {
+                    updateLeaderboards();
+                }
             }
 
             // Update active state of navigation links
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
-                if (link.getAttribute('href') === window.location.pathname) {
+                const href = link.getAttribute('href');
+                if (href === window.location.pathname || href === '/PEO/' + currentPath) {
                     link.classList.add('active');
                 }
             });
