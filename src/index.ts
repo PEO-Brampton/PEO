@@ -179,19 +179,31 @@ async function updateTeamStatus(teamNumber: string, newStatus: 'judged' | 'quali
         );
         
         const querySnapshot = await getDocs(teamQuery);
+        console.log(`Found ${querySnapshot.size} team members for team ${teamNumber}`);
+        
+        if (querySnapshot.empty) {
+            console.error(`No team members found for team ${teamNumber}`);
+            return;
+        }
+
         const batch = writeBatch(db);
         
         // Update each team member's status
         querySnapshot.docs.forEach(doc => {
-            batch.update(doc.ref, { status: newStatus });
+            console.log(`Updating status for team member ${doc.id}`);
+            batch.update(doc.ref, { 
+                status: newStatus,
+                updatedAt: new Date().toISOString()
+            });
         });
         
         // Commit the batch update
         await batch.commit();
+        console.log(`Successfully updated status for all team members of team ${teamNumber}`);
         
         // Update the UI
-        updateParticipantsTable();
-        updateLeaderboards();
+        await updateParticipantsTable();
+        await updateLeaderboards();
     } catch (error) {
         console.error('Error updating team status:', error);
     }
