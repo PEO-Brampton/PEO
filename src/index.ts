@@ -19,6 +19,7 @@ interface Participant {
     schoolName: string;
     arrivalTime?: string;
     waiver: boolean;
+    mostAdventurous?: boolean;
 }
 
 // Firebase configuration
@@ -95,8 +96,10 @@ async function updateLeaderboards() {
                 <td>${participant.teamName}</td>
                 <td>${participant.status}</td>
                 <td>${participant.score || 0}</td>
+                <td>${participant.mostAdventurous ? 'Yes' : 'No'}</td>
             `;
 
+            // Make sure we're appending to the correct table based on category
             if (participant.category === 'junior' && juniorTable) {
                 juniorTable.appendChild(row);
             } else if (participant.category === 'senior' && seniorTable) {
