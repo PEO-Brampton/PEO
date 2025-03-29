@@ -32,8 +32,6 @@
                         <li><a href="/PEO/" class="nav-link">Check In</a></li>
                         <li><a href="/PEO/qualification" class="nav-link">Qualification</a></li>
                         <li><a href="/PEO/judging" class="nav-link">Judging</a></li>
-                        <li><a href="/PEO/leaderboard" class="nav-link">Leaderboard</a></li>
-                        <li><a href="/PEO/ranking" class="nav-link">Ranking</a></li>
                         <li><a href="/PEO/admin" class="nav-link">Admin</a></li>
                     </ul>
                 </div>
@@ -246,86 +244,6 @@
                 </form>
             </div>
 
-            <div id="leaderboard-page" class="page">
-                <h2>Leaderboard</h2>
-                <div class="leaderboard-container">
-                    <div id="junior-leaderboard" class="leaderboard-section">
-                        <h3>Junior Teams</h3>
-                        <div class="table-container">
-                            <table class="leaderboard-table">
-                                <thead>
-                                    <tr>
-                                        <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
-                                        <th>Most Adventurous</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="junior-leaderboard"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div id="senior-leaderboard" class="leaderboard-section">
-                        <h3>Senior Teams</h3>
-                        <div class="table-container">
-                            <table class="leaderboard-table">
-                                <thead>
-                                    <tr>
-                                        <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="score">Score <span class="sort-icon"></span></th>
-                                        <th>Most Adventurous</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="senior-leaderboard"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="ranking-page" class="page">
-                <h2>Team Rankings</h2>
-                <div class="ranking-container">
-                    <div id="junior-ranking" class="ranking-section">
-                        <h3>Junior Teams</h3>
-                        <div class="table-container">
-                            <table class="ranking-table">
-                                <thead>
-                                    <tr>
-                                        <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="averageScore">Average Score <span class="sort-icon"></span></th>
-                                        <th>Most Adventurous</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div id="senior-ranking" class="ranking-section">
-                        <h3>Senior Teams</h3>
-                        <div class="table-container">
-                            <table class="ranking-table">
-                                <thead>
-                                    <tr>
-                                        <th class="sortable" data-sort="teamNumber">Team Number <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="teamName">Team Name <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="status">Status <span class="sort-icon"></span></th>
-                                        <th class="sortable" data-sort="averageScore">Average Score <span class="sort-icon"></span></th>
-                                        <th>Most Adventurous</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div id="admin-page" class="page">
                 <h2>Admin Panel</h2>
                 <div class="admin-container">
@@ -388,10 +306,6 @@
                 activePage = 'qualification-page';
             } else if (currentPath === '/judging' || currentPath === 'judging') {
                 activePage = 'judging-page';
-            } else if (currentPath === '/leaderboard' || currentPath === 'leaderboard') {
-                activePage = 'leaderboard-page';
-            } else if (currentPath === '/ranking' || currentPath === 'ranking') {
-                activePage = 'ranking-page';
             } else if (currentPath === '/admin' || currentPath === 'admin') {
                 activePage = 'admin-page';
             }
