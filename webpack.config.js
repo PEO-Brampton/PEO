@@ -30,10 +30,6 @@ module.exports = {
         },
         compress: true,
         port: 9001,
-        historyApiFallback: {
-            rewrites: [
-                { from: /^\/PEO\/.*/, to: '/PEO/index.html' }
-            ]
-        }
+        historyApiFallback: true
     }
 }; 

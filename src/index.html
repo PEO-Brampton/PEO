@@ -319,5 +319,52 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Handle routing
+        function handleRoute() {
+            const path = window.location.pathname;
+            const basePath = '/PEO';
+            
+            // Remove the base path from the current path
+            const currentPath = path.replace(basePath, '');
+            
+            // Show the appropriate page
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+            });
+            
+            if (currentPath === '/' || currentPath === '') {
+                document.getElementById('checkin-page').style.display = 'block';
+            } else if (currentPath === '/qualification') {
+                document.getElementById('qualification-page').style.display = 'block';
+            } else if (currentPath === '/judging') {
+                document.getElementById('judging-page').style.display = 'block';
+            } else if (currentPath === '/leaderboard') {
+                document.getElementById('leaderboard-page').style.display = 'block';
+            } else if (currentPath === '/admin') {
+                document.getElementById('admin-page').style.display = 'block';
+            } else {
+                // If no matching route, show check-in page
+                document.getElementById('checkin-page').style.display = 'block';
+            }
+        }
+
+        // Handle navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const href = link.getAttribute('href');
+                window.history.pushState({}, '', href);
+                handleRoute();
+            });
+        });
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', handleRoute);
+
+        // Initial route handling
+        handleRoute();
+    </script>
 </body>
 </html> 
