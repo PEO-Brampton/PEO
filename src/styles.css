@@ -814,4 +814,77 @@ main.sidebar-collapsed {
 
 .reset-btn:hover {
     background-color: #c0392b;
+}
+
+/* Ranking Page Styles */
+.ranking-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.ranking-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.ranking-section h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.ranking-table th,
+.ranking-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ranking-table th {
+    background-color: #f8f9fa;
+    font-weight: 500;
+}
+
+.ranking-table th.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 20px;
+}
+
+.ranking-table th.sortable:hover {
+    background-color: #e9ecef;
+}
+
+.ranking-table th.sortable .sort-icon {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.ranking-table th.sortable.asc .sort-icon::after {
+    content: '▲';
+    font-size: 12px;
+}
+
+.ranking-table th.sortable.desc .sort-icon::after {
+    content: '▼';
+    font-size: 12px;
+}
+
+.ranking-table tbody tr:hover {
+    background-color: #f8f9fa;
 } 

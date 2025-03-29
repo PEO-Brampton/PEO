@@ -25,6 +25,15 @@ interface Participant {
     criteria3?: string;
     criteria4?: string;
     criteria5?: string;
+    judgingScores?: {
+        judge: string;
+        criteria1: number;
+        criteria2: number;
+        criteria3: number;
+        criteria4: number;
+        criteria5: number;
+        totalScore: number;
+    }[];
 }
 
 // Firebase configuration
@@ -321,4 +330,170 @@ async function updateParticipantsTable() {
     } catch (error) {
         console.error('Error updating participants table:', error);
     }
-} 
+}
+
+// Add the ranking update function
+async function updateRankings() {
+    if (!db) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
+    try {
+        console.log('Updating rankings...');
+        const participantsRef = collection(db, 'participants');
+        const participantsQuery = query(
+            participantsRef,
+            where('status', 'in', ['judged', 'qualified'])
+        );
+
+        const querySnapshot = await getDocs(participantsQuery);
+        console.log(`Found ${querySnapshot.size} teams to rank`);
+
+        // Group participants by team number to calculate average scores
+        const teamScores = new Map<string, {
+            teamNumber: string;
+            teamName: string;
+            status: string;
+            averageScore: number;
+            mostAdventurous: boolean;
+            category: 'junior' | 'senior';
+        }>();
+
+        querySnapshot.docs.forEach(doc => {
+            const participant = doc.data() as Participant;
+            const teamNumber = participant.teamNumber;
+
+            if (!teamScores.has(teamNumber)) {
+                // Initialize team data
+                teamScores.set(teamNumber, {
+                    teamNumber,
+                    teamName: participant.teamName,
+                    status: participant.status,
+                    averageScore: 0,
+                    mostAdventurous: participant.mostAdventurous || false,
+                    category: participant.category
+                });
+            }
+
+            // Calculate average score from all judges
+            const scores = participant.judgingScores || [];
+            if (scores.length > 0) {
+                const totalScore = scores.reduce((sum, score) => {
+                    return sum + (
+                        (Number(score.criteria1) || 0) +
+                        (Number(score.criteria2) || 0) +
+                        (Number(score.criteria3) || 0) +
+                        (Number(score.criteria4) || 0) +
+                        (Number(score.criteria5) || 0)
+                    );
+                }, 0);
+                
+                const averageScore = totalScore / (scores.length * 5); // Divide by number of judges * number of criteria
+                teamScores.get(teamNumber)!.averageScore = averageScore;
+            }
+        });
+
+        // Update tables
+        const juniorTable = document.getElementById('junior-ranking')?.querySelector('tbody');
+        const seniorTable = document.getElementById('senior-ranking')?.querySelector('tbody');
+
+        if (!juniorTable || !seniorTable) {
+            console.error('Could not find ranking tables');
+            return;
+        }
+
+        juniorTable.innerHTML = '';
+        seniorTable.innerHTML = '';
+
+        // Convert Map to array and sort by average score
+        const sortedTeams = Array.from(teamScores.values())
+            .sort((a, b) => b.averageScore - a.averageScore);
+
+        sortedTeams.forEach(team => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${team.teamNumber}</td>
+                <td>${team.teamName}</td>
+                <td>${team.status}</td>
+                <td>${team.averageScore.toFixed(2)}</td>
+                <td>${team.mostAdventurous ? 'Yes' : 'No'}</td>
+            `;
+
+            if (team.category === 'junior') {
+                juniorTable.appendChild(row);
+            } else if (team.category === 'senior') {
+                seniorTable.appendChild(row);
+            }
+        });
+
+        console.log('Rankings update complete');
+    } catch (error) {
+        console.error('Error updating rankings:', error);
+    }
+}
+
+// Add sorting functionality for ranking tables
+function handleRankingSort(event: Event) {
+    const header = event.target as HTMLElement;
+    if (!header.matches('th.sortable')) return;
+
+    const field = header.getAttribute('data-sort');
+    if (!field) return;
+
+    const table = header.closest('table');
+    if (!table) return;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const isAsc = !header.classList.contains('asc');
+
+    // Update sort indicators
+    table.querySelectorAll('th').forEach(th => {
+        th.classList.remove('asc', 'desc');
+    });
+    header.classList.add(isAsc ? 'asc' : 'desc');
+
+    // Sort rows
+    rows.sort((a, b) => {
+        const aValue = a.children[getColumnIndex(field)].textContent || '';
+        const bValue = b.children[getColumnIndex(field)].textContent || '';
+
+        if (field === 'averageScore') {
+            return (parseFloat(aValue) - parseFloat(bValue)) * (isAsc ? 1 : -1);
+        }
+        return aValue.localeCompare(bValue) * (isAsc ? 1 : -1);
+    });
+
+    // Reorder rows
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function getColumnIndex(field: string): number {
+    switch (field) {
+        case 'teamNumber': return 0;
+        case 'teamName': return 1;
+        case 'status': return 2;
+        case 'averageScore': return 3;
+        default: return 0;
+    }
+}
+
+// Add event listeners for ranking table sorting
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing event listeners ...
+
+    // Add ranking table sort listeners
+    const rankingTables = ['junior-ranking', 'senior-ranking'];
+    rankingTables.forEach(tableId => {
+        const table = document.getElementById(tableId);
+        if (table) {
+            table.querySelectorAll('th.sortable').forEach(header => {
+                header.addEventListener('click', handleRankingSort);
+            });
+        }
+    });
+}); 
