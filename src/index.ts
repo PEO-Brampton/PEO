@@ -20,6 +20,11 @@ interface Participant {
     arrivalTime?: string;
     waiver: boolean;
     mostAdventurous?: boolean;
+    criteria1?: string;
+    criteria2?: string;
+    criteria3?: string;
+    criteria4?: string;
+    criteria5?: string;
 }
 
 // Firebase configuration
@@ -92,11 +97,28 @@ async function updateLeaderboards() {
             juniorTable.innerHTML = '';
             seniorTable.innerHTML = '';
 
-            // Sort participants by score in descending order
-            participants.sort((a, b) => (b.score || 0) - (a.score || 0));
+            // Calculate scores and sort participants
+            const scoredParticipants = participants.map(participant => {
+                // Calculate total score from criteria
+                const criteria1 = Number(participant.criteria1) || 0;
+                const criteria2 = Number(participant.criteria2) || 0;
+                const criteria3 = Number(participant.criteria3) || 0;
+                const criteria4 = Number(participant.criteria4) || 0;
+                const criteria5 = Number(participant.criteria5) || 0;
+                
+                const totalScore = criteria1 + criteria2 + criteria3 + criteria4 + criteria5;
+                
+                return {
+                    ...participant,
+                    score: totalScore
+                };
+            });
+
+            // Sort by score in descending order
+            scoredParticipants.sort((a, b) => (b.score || 0) - (a.score || 0));
 
             // Update tables
-            participants.forEach(participant => {
+            scoredParticipants.forEach(participant => {
                 console.log(`Processing team: ${participant.teamNumber}, Category: ${participant.category}, Score: ${participant.score}`);
                 const row = document.createElement('tr');
                 row.innerHTML = `
