@@ -24,12 +24,13 @@ interface Participant {
 
 // Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyDxGxGxGxGxGxGxGxGxGxGxGxGxGxGxGxGx",
-    authDomain: "peo-bridge-building-competition.firebaseapp.com",
-    projectId: "peo-bridge-building-competition",
-    storageBucket: "peo-bridge-building-competition.appspot.com",
-    messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdef1234567890"
+    apiKey: "AIzaSyDr6fbYSOMuNivKrd8tPxhyaKq_aE2J2B4",
+    authDomain: "peo-a-1ad2b.firebaseapp.com",
+    databaseURL: "https://peo-a-1ad2b-default-rtdb.firebaseio.com",
+    projectId: "peo-a-1ad2b",
+    storageBucket: "peo-a-1ad2b.firebasestorage.app",
+    messagingSenderId: "373859495373",
+    appId: "1:373859495373:web:209555ee02b3bcc945e884"
 };
 
 // Initialize Firebase
@@ -67,56 +68,65 @@ async function updateLeaderboards() {
             participantsRef,
             where('status', '==', 'judged')
         );
-        console.log('Created query');
+        console.log('Created query with status filter');
         
-        const querySnapshot = await getDocs(participantsQuery);
-        console.log(`Found ${querySnapshot.size} judged teams`);
-        
-        const participants = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as Participant[];
-        console.log('Processed participants:', participants);
+        try {
+            const querySnapshot = await getDocs(participantsQuery);
+            console.log(`Found ${querySnapshot.size} judged teams`);
+            
+            const participants = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Participant[];
+            console.log('Processed participants:', participants);
 
-        // Clear existing rows
-        const juniorTable = document.getElementById('junior-leaderboard')?.querySelector('tbody');
-        const seniorTable = document.getElementById('senior-leaderboard')?.querySelector('tbody');
-        
-        if (!juniorTable || !seniorTable) {
-            console.error('Could not find leaderboard tables');
-            return;
-        }
-
-        juniorTable.innerHTML = '';
-        seniorTable.innerHTML = '';
-
-        // Sort participants by score in descending order
-        participants.sort((a, b) => (b.score || 0) - (a.score || 0));
-
-        // Update tables
-        participants.forEach(participant => {
-            console.log(`Processing team: ${participant.teamNumber}, Category: ${participant.category}, Score: ${participant.score}`);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${participant.teamNumber}</td>
-                <td>${participant.teamName}</td>
-                <td>${participant.status}</td>
-                <td>${participant.score || 0}</td>
-                <td>${participant.mostAdventurous ? 'Yes' : 'No'}</td>
-            `;
-
-            if (participant.category === 'junior') {
-                juniorTable.appendChild(row);
-                console.log('Added to junior table');
-            } else if (participant.category === 'senior') {
-                seniorTable.appendChild(row);
-                console.log('Added to senior table');
+            // Clear existing rows
+            const juniorTable = document.getElementById('junior-leaderboard')?.querySelector('tbody');
+            const seniorTable = document.getElementById('senior-leaderboard')?.querySelector('tbody');
+            
+            if (!juniorTable || !seniorTable) {
+                console.error('Could not find leaderboard tables');
+                return;
             }
-        });
 
-        console.log('Leaderboard update complete');
+            juniorTable.innerHTML = '';
+            seniorTable.innerHTML = '';
+
+            // Sort participants by score in descending order
+            participants.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+            // Update tables
+            participants.forEach(participant => {
+                console.log(`Processing team: ${participant.teamNumber}, Category: ${participant.category}, Score: ${participant.score}`);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${participant.teamNumber}</td>
+                    <td>${participant.teamName}</td>
+                    <td>${participant.status}</td>
+                    <td>${participant.score || 0}</td>
+                    <td>${participant.mostAdventurous ? 'Yes' : 'No'}</td>
+                `;
+
+                if (participant.category === 'junior') {
+                    juniorTable.appendChild(row);
+                    console.log('Added to junior table');
+                } else if (participant.category === 'senior') {
+                    seniorTable.appendChild(row);
+                    console.log('Added to senior table');
+                }
+            });
+
+            console.log('Leaderboard update complete');
+        } catch (queryError) {
+            console.error('Error executing Firestore query:', queryError);
+            console.error('Query details:', {
+                collection: 'participants',
+                filter: 'status == judged'
+            });
+        }
     } catch (error) {
-        console.error('Error updating leaderboards:', error);
+        console.error('Error in updateLeaderboards:', error);
+        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     }
 }
 
